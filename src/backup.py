@@ -46,8 +46,7 @@ def draw_graph(series1,series2,ylabel,xlabel,color="#00aaff",line=False):
         
         
         
-        
- """
+"""
     v = velocity
     vi = initial velocity
     vf = final velocity
@@ -109,3 +108,105 @@ def smart_motion_graph(
             draw_graph(s_v,s_dt,"Velocity","Time",line=True,color=color)
         else:
             raise ValueError("Please provide the necessary arguments - vi, a, dt")
+    else:
+        raise ValueError("Please specify the type of graph you want. Options are: 'v-t','p-t'")  
+            
+"""
+    angle -> 𝜃, launch angle
+    vi -> initial velocity
+    y -> initial height
+    x -> initial x position
+    dt -> change in time
+    specify -> [
+        'y-x' -> graph of y and x positions over time
+        'x-t' -> graph of y and x positions over time
+        'y-t' -> graph of y and x positions over time
+        'v-comp' -> components of velocity
+        'vy-t' -> components of velocity
+        'vx-t' -> components of velocity
+    ]
+"""
+def projectile_motion_graph(
+    angle = 0, vi = 0, y = 0, x = 0, dt = 0, specify="", radians = False,
+    color = "#00aaff"
+):
+    if not radians:
+        angle = math.radians(angle)
+        
+    dt = (2*vi*math.sin(angle)/G)
+    #y component of initial speed
+    viy = vi*math.sin(angle)
+    #x component of initial speed
+    vix = vi*math.cos(angle)
+
+    # empty series for x and y components
+    s_y = pd.Series([],dtype=pd.StringDtype())
+    s_x = pd.Series([],dtype=pd.StringDtype())
+
+    #series for time
+    s_dt = pd.Series([],dtype=pd.StringDtype())
+    t_calc = 0
+    
+    if specify=="y-x" or specify=="x-y":
+        # range is the distance projectile travels
+        # https://en.wikipedia.org/wiki/Range_of_a_projectile
+        
+        #each graph will have 100 points, no matter of the time
+        s_dt = calculate_time(dt,100)
+        
+        for time in s_dt:
+            y_pos = viy*time-0.5*G*(time**2)
+            x_pos = vix*time
+            s_y.at[time] = y_pos+y
+            s_x.at[time] = x_pos+x
+            
+        draw_graph(s_y,s_x,"Y","X",line=True,color=color)  
+        
+    elif specify=="x-t":
+        s_dt = calculate_time(dt,100)
+        for time in s_dt:
+            x_pos = vix*time
+            s_x.at[time] = x_pos+x
+        draw_graph(s_x,s_dt,"X","Time",line=True,color=color)  
+    
+    elif specify=="y-t":
+        s_dt = calculate_time(dt,100)
+        for time in s_dt:
+            y_pos = viy*time-0.5*G*(time**2)
+            s_y.at[time] = y_pos+y
+            
+        draw_graph(s_y,s_dt,"Y","Time",line=True,color=color)  
+        
+    elif specify=="v-comp":
+        # v_y at time t is equal to v_iy - G*t
+        # v_x is constant since there is no force acting against it
+        
+        #each graph will have 10 points, no matter of the time
+        s_dt = calculate_time(dt,10)
+        
+        for time in s_dt:
+            v_y = viy-G*time
+            s_y.at[v_y] = v_y
+            s_x.at[time] = vix
+        draw_graph(s_y,s_x,"Y component of velocity","X component of velocity",line=True,color=color)  
+    elif specify=="vy-t":
+        #each graph will have 10 points, no matter of the time
+        s_dt = calculate_time(dt,10)
+        for time in s_dt:
+            v_y = viy-G*time
+            s_y.at[v_y] = v_y
+            
+        draw_graph(s_y,s_dt,"Y component of velocity","Time",line=True,color=color)  
+    elif specify=="vx-t":
+        s_x = pd.Series((vix for i in range(0,10)))
+        s_dt = calculate_time(dt,10)
+        draw_graph(s_x,s_dt,"X component of velocity","Time",line=True,color=color)  
+    else:
+        raise ValueError("Please specify the type of graph you want. Options are: 'y-x','y-t','x-t','v-comp','vy-t','vx-t'")
+def calculate_time(dt,length):
+    t_calc = 0
+    s_dt = pd.Series([],dtype=pd.StringDtype())
+    for i in range(0,length):
+        t_calc+=dt/(length)
+        s_dt.at[t_calc] = t_calc
+    return s_dt
